@@ -1,3 +1,7 @@
+build
+._*
+.DS_Store
+
 # Prerequisites
 *.d
 
