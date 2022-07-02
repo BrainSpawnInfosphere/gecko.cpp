@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10.0)
-project(gecko VERSION 0.0.1 LANGUAGES CXX)
+project(examples VERSION 0.0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -40,23 +40,6 @@ ExternalProject_Add(gecko-proj
 SET(GECKO_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/gecko/src/include)
 SET(GECKO_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/gecko)
 
-# include(ExternalProject)
-# ExternalProject_Add(serial-proj
-#   GIT_REPOSITORY    https://github.com/gecko-robotics/serialcomm.git
-#   GIT_TAG           main
-#   GIT_SHALLOW       TRUE
-#   SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/serial/src"
-#   BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/serial"
-#   # CONFIGURE_COMMAND ""
-#   BUILD_COMMAND     "make"
-#   INSTALL_COMMAND   ""
-#   # TEST_COMMAND      ""
-#   PREFIX "${CMAKE_CURRENT_BINARY_DIR}"
-# )
-#
-# SET(SER_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/serial/src/include)
-# SET(SER_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/serial)
-
 # Threads ---------------------------------------------------------
 find_package(Threads REQUIRED)
 if(Threads_FOUND)
@@ -64,26 +47,28 @@ if(Threads_FOUND)
     if(CMAKE_USE_PTHREADS_INIT)
         message(STATUS " -> Using pthreads")
     endif()
-    # list(APPEND ALL_LIBS ${CMAKE_THREAD_LIBS_INIT})
 else()
     message(WARNING "*** Could not find Threads ***")
 endif()
 
 # Binary ======================================================================
-set(MAIN main)
-add_executable(${MAIN} main.cpp)
-add_dependencies(${MAIN} gecko-proj)
-target_include_directories(${MAIN} PRIVATE ${GECKO_INCLUDE_DIR})
-target_link_libraries(${MAIN} PRIVATE gecko)
-target_link_directories(${MAIN} PRIVATE ${GECKO_LIB_DIR})
-
-set(IMU imu)
-add_executable(${IMU} imu.cpp)
-add_dependencies(${IMU} gecko-proj)
-target_include_directories(${IMU} PRIVATE ${GECKO_INCLUDE_DIR})
-target_link_libraries(${IMU}
-    PRIVATE
-        gecko
-        ${CMAKE_THREAD_LIBS_INIT}
+LIST(APPEND apps
+    main.cpp
+    imu.cpp
 )
-target_link_directories(${IMU} PRIVATE ${GECKO_LIB_DIR})
+
+foreach(MAIN ${apps})
+    add_executable(${MAIN} main.cpp)
+    add_dependencies(${MAIN} gecko-proj)
+    target_include_directories(${MAIN}
+        PRIVATE
+            ${GECKO_INCLUDE_DIR}
+            ${CMAKE_CURRENT_BINARY_DIR}/gecko/marko/src/include
+    )
+    target_link_directories(${MAIN}
+        PRIVATE
+            ${GECKO_LIB_DIR}
+            ${CMAKE_CURRENT_BINARY_DIR}/gecko/marko
+    )
+    target_link_libraries(${MAIN} PRIVATE gecko marko ${CMAKE_THREAD_LIBS_INIT})
+endforeach()
